@@ -134,8 +134,10 @@ def render_screen():
    if bottom:
     edges+=path(f'M9 {height-32}V{height-4}H37M923 {height-4}H951V{height-32}',stroke='#ff4747')
    if len(row)==1:
+    # Keep data labels legible from the first frame, including on cached SVGs.
+    content=body if loc in {'assets/stats.svg','assets/contribution-analysis.svg'} else type_text(body)
     # The outer frame belongs to the full screen. Full-width sections sit on its background.
-    interior=f'<g transform="translate(43 8) scale(.91 1)">{type_text(body)}</g>'
+    interior=f'<g transform="translate(43 8) scale(.91 1)">{content}</g>'
     if Path(loc).stem in {'canais','projetos','publicacoes'}:
      interior+=path(f'M66 {height-14}H894',stroke='#682126')+path(f'M66 {height-14}H181',stroke='#e00000')
    else:
@@ -219,7 +221,7 @@ sections.append([save('channel-'+str(i),58,text(13,34,name,14,cream,700)+text(16
 
 stats=rail('02','TELEMETRIA DO OPERADOR','NET / STATS')
 stats+=path('M24 59H936')
-metrics=[(commit_count,'COMMITS PÚBLICOS¹'),(total,'CONTRIBUIÇÕES'),(user['public_repos'],'REPOS PÚBLICOS'),(user['followers'],'SEGUIDORES'),(longest,'RECORDE / DIAS')]
+metrics=[(commit_count,'COMMITS PÚBLICOS¹'),(total,'CONTRIBUIÇÕES'),(user['public_repos'],'REPOSITÓRIOS PÚBLICOS'),(user['followers'],'SEGUIDORES'),(longest,'RECORDE EM DIAS')]
 for i,(v,l) in enumerate(metrics):
  x=25+i*185
  if i: stats+=path(f'M{x-13} 73V148')
@@ -266,7 +268,8 @@ for _,_,n,(a,b,c,d) in sorted(columns):
 
 analysis+=path('M24 364H936')
 analysis+=text(26,392,f'{days[0][0]:%d/%m/%Y} → {days[-1][0]:%d/%m/%Y}',14,dim)
-analysis+=text(523,392,f'PICO DIÁRIO // {maxday:%d/%m/%Y} · {maximum} CONTRIBUIÇÕES',14,red,700)
+peak_label=text(934,392,f'PICO DIÁRIO // {maxday:%d/%m/%Y} · {maximum} CONTRIBUIÇÕES',14,red,700)
+analysis+=f'<g text-anchor="end">{peak_label}</g>'
 save('contribution-analysis',417,analysis,'Análise de contribuições do GitHub. Colunas 3D representam o volume de atividade por dia.',link='https://github.com/pjz3650#js-contribution-activity')
 label('04','PROJETOS','NET / ARCHIVE')
 projects=[

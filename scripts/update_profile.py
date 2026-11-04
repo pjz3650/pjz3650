@@ -234,28 +234,40 @@ stats+=text(25,280,'¹ Commits indexados pelo GitHub no período do calendário.
 stats+=text(25,301,f'DADOS DO GITHUB · {days[-1][0]:%d/%m/%Y}',13,dim)
 save('stats',324,stats,'Telemetria do GitHub: commits públicos indexados, contribuições, repositórios, seguidores e sequências.',link='https://github.com/pjz3650#js-contribution-activity')
 
-city=rail('03','CIDADE DE CONTRIBUIÇÕES','NET / CITY')+path('M24 58H936')
-city+=text(26,88,'NIGHT CITY // TRÁFEGO POR QUADRA',17,cream,700)
-city+=text(26,113,'Cada prédio representa um dia com atividade.',14,dim)
-base=days[0][0]
+analysis=rail('03','ANÁLISE DE CONTRIBUIÇÕES','NET / ACTIVITY')+path('M24 58H936')
+analysis+=text(26,88,'ATIVIDADE POR DIA',17,cream,700)
+analysis+=text(26,113,'Cada coluna representa um dia ativo. A altura indica o volume.',14,dim)
+base=days[0][0]-timedelta(days=days[0][0].weekday())
 tiles=[]
 for day,n in days:
- offset=(day-base).days+(base.weekday()+1)%7
- week,row=divmod(offset,7)
+ week,row=divmod((day-base).days,7)
  tiles.append((week,row,n))
-for week,row,n in sorted(tiles,key=lambda t:t[0]+t[1]):
- x=106+week*14+row*10
- y=167+week*3.1-row*8
- h=8+91*(n/maximum)**.48 if n else 0
- top=f'M{x} {y-h}l9 -4l11 5l-9 4Z'
- if h:
-  city+=path(f'M{x} {y-h}l11 5v{h}l-11 -5Z','#6e1018','#a51e23')
-  city+=path(f'M{x+11} {y-h+5}l9 -4v{h}l-9 4Z','#310a10','#8b1b20')
- city+=path(top,'#ef4141' if n>=9 else '#a9212a' if n else '#211015','#84242b' if n else '#442029')
-city+=path('M24 364H936')
-city+=text(26,392,f'{days[0][0]:%d/%m/%Y} → {days[-1][0]:%d/%m/%Y}',14,dim)
-city+=text(523,392,f'PICO // {maxday:%d/%m/%Y} · {maximum} CONTRIBUIÇÕES',14,red,700)
-save('contribution-city',417,city,'Night City: mapa isométrico das contribuições no calendário do GitHub.',link='https://github.com/pjz3650#js-contribution-activity')
+
+def quad(points,fill,stroke):
+ return path('M'+'L'.join(f'{x:.2f} {y:.2f}' for x,y in points)+'Z',fill,stroke)
+
+columns=[]
+# Keep every footprint within its own grid cell. Draw the ground first.
+for week,row,n in tiles:
+ x=116+week*14.4-row*10
+ y=176+week*2.35+row*8
+ a,b,c,d=(x,y),(x+10,y+1.63),(x+3.5,y+6.83),(x-6.5,y+5.2)
+ analysis+=quad((a,b,c,d),'#160d10','#3d1b21')
+ if n:
+  columns.append((c[1],x,n,(a,b,c,d)))
+
+# Each complete column is painted back to front, including its cap.
+for _,_,n,(a,b,c,d) in sorted(columns):
+ height=4+76*(n/maximum)**.55
+ a_top,b_top,c_top,d_top=((x,y-height) for x,y in (a,b,c,d))
+ analysis+=quad((d_top,c_top,c,d),'#851b25','#b32c35')
+ analysis+=quad((b_top,c_top,c,b),'#370c13','#a2232c')
+ analysis+=quad((a_top,b_top,c_top,d_top),'#f44a4a' if n>=9 else '#b72934','#b92e37')
+
+analysis+=path('M24 364H936')
+analysis+=text(26,392,f'{days[0][0]:%d/%m/%Y} → {days[-1][0]:%d/%m/%Y}',14,dim)
+analysis+=text(523,392,f'PICO DIÁRIO // {maxday:%d/%m/%Y} · {maximum} CONTRIBUIÇÕES',14,red,700)
+save('contribution-analysis',417,analysis,'Análise de contribuições do GitHub. Colunas 3D representam o volume de atividade por dia.',link='https://github.com/pjz3650#js-contribution-activity')
 label('04','PROJETOS','NET / ARCHIVE')
 projects=[
  ('pokedex-strategy-hub','POKÉTACTICS','Catálogo, builds e equipes Pokémon.','TYPESCRIPT / WEB'),
@@ -293,7 +305,7 @@ readme+='</p>\n'
 render_screen()
 for data in assets.values():
  ET.fromstring(data)
-paths=assets.keys() if options.snapshot else ('assets/stats.svg','assets/contribution-city.svg')
+paths=assets.keys() if options.snapshot else ('assets/stats.svg','assets/contribution-analysis.svg')
 for name in paths:
  loc=root/name
  loc.parent.mkdir(exist_ok=True)

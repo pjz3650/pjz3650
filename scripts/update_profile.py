@@ -99,33 +99,61 @@ def type_text(body):
   return f'<text {match[1]} class="typed" xml:space="preserve" style="--line:{start:.3f}s">{chars}</text>'
  return re.sub(r'<text ([^>]+)>([^<]*)</text>',replace,body)
 
-def screen_frame(name, width, height):
- left = width == 960 or name in {
-  'channel-0', 'card-pokedex-strategy-hub', 'card-analise-reverberacao-sala-sp'
- }
- right = width == 960 or name in {
-  'channel-4', 'card-codex-mcp-skill-transfer', 'card-strudel-based-studio'
- }
- # Draw to the viewport edge so adjoining README rows form one screen.
- segments = []
- if left:
-  segments.append(f'M0 0V{height}')
- if right:
-  segments.append(f'M{width} 0V{height}')
- if name == 'header':
-  segments.append(f'M0 0H{width}')
- if name == 'footer':
-  segments.append(f'M0 {height}H{width}')
- if not segments:
-  return ''
- return f'<path d="{" ".join(segments)}" fill="none" stroke="#e00000" stroke-width="4"/>'
+def render_screen():
+ row_y=0
+ for row_index,row in enumerate(sections):
+  slot=W//len(row)
+  for column,(loc,alt,_,w) in enumerate(row):
+   h,body=assets[loc]
+   width=W if len(row)==1 else slot
+   height=h+16
+   first=column==0
+   last=column==len(row)-1
+   top=row_index==0
+   bottom=row_index==len(sections)-1
+   left=16 if first else 0
+   right=width-16 if last else width
+   upper=11 if top else 0
+   lower=height-11 if bottom else height
+   grid=f'<defs><pattern id="screen-grid" width="32" height="32" patternUnits="userSpaceOnUse" patternTransform="translate({-(column*slot)%32} {-row_y%32})"><path d="M32 0H0V32" fill="none" stroke="#8a2229" stroke-opacity=".14"/></pattern></defs>'
+   background=rect(left,upper,right-left,lower-upper,'#000000')+rect(left,upper,right-left,lower-upper,'url(#screen-grid)')
+   sides=[]
+   if first:
+    sides.append(f'M16 {upper}V{lower}')
+   if last:
+    sides.append(f'M{width-16} {upper}V{lower}')
+   if top or bottom:
+    y=upper if top else lower
+    sides.append(f'M{left} {y}H{right}')
+   frame=''.join(sides)
+   edges=''
+   if frame:
+    edges=f'<path d="{frame}" fill="none" stroke="#e00000" stroke-width="7" opacity=".10"/><path d="{frame}" fill="none" stroke="#ef252a" stroke-width="1.4"/>'
+   if top:
+    edges+=path('M9 32V4H37M923 4H951V32',stroke='#ff4747')
+   if bottom:
+    edges+=path(f'M9 {height-32}V{height-4}H37M923 {height-4}H951V{height-32}',stroke='#ff4747')
+   if len(row)==1:
+    # The outer frame belongs to the full screen. Full-width sections sit on its background.
+    interior=f'<g transform="translate(43 8) scale(.91 1)">{type_text(body)}</g>'
+    if Path(loc).stem in {'canais','projetos','publicacoes'}:
+     interior+=path(f'M66 {height-14}H894',stroke='#682126')+path(f'M66 {height-14}H181',stroke='#e00000')
+   else:
+    inset_left=43 if first else 7
+    inset_right=43 if last else 7
+    scale=(width-inset_left-inset_right)/w
+    card=path(f'M1 1H{w-11}L{w-1} 11V{h-1}H11L1 {h-11}Z','#11090b','#72242a')
+    interior=f'<g transform="translate({inset_left} 8) scale({scale} 1)">{card}{type_text(body)}</g>'
+   title=html.escape(alt)
+   assets[loc]=f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img"><title>{title}</title>{grid}{background}{edges}{MOTION}{interior}</svg>'
+  row_y+=height
 
 def save(name,h,body,alt,w=W,link=None,section=True):
  loc='assets/'+name+'.svg'
- title=html.escape(alt)
- assets[loc]=f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>{title}</title>'+rect(0,0,w,h,panel)+path(f'M1 1H{w-14}L{w-1} 14V{h-1}H14L1 {h-14}Z',panel)+path(f'M1 24V1H38M{w-1} {h-25}V{h-1}H{w-39}',stroke=bright)+MOTION+type_text(body)+screen_frame(name,w,h)+'</svg>'
+ assets[loc]=(h,body)
  if section: sections.append([(loc,alt,link,w)])
  return (loc,alt,link,w)
+
 def rail(n,title,code,h=58):
  return text(24,36,n,15,red,700)+text(70,36,title,18,cream,700)+text(776,36,code,13,dim)+path(f'M47 19V41M740 19V41')
 def label(n,title,code):
@@ -260,8 +288,9 @@ def img(loc,alt,link,w):
  return f'<a href="{html.escape(link,quote=True)}">{item}</a>' if link else item
 
 readme='<!-- Perfil temático de fã. -->\n<p align="center">\n'
-readme+='<br>\n'.join(''.join(img(*a) for a in row) for row in sections)+'\n'
+readme+='\n'.join(''.join(img(*a) for a in row) for row in sections)+'\n'
 readme+='</p>\n'
+render_screen()
 for data in assets.values():
  ET.fromstring(data)
 paths=assets.keys() if options.snapshot else ('assets/stats.svg','assets/contribution-city.svg')

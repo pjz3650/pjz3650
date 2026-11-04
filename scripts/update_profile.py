@@ -67,7 +67,7 @@ for _,count in days:
  longest=max(longest,run)
 recent=next((i for i,(_,c) in enumerate(reversed(days)) if c==0),len(days))
 W=960
-red='#ff4848'; bright='#e00000'; cream='#f9e8d6'; dim='#c2a3a1'; panel='#11090b'; line='#592327'
+red='#ff4848'; bright='#e00000'; cream='#f9e8d6'; dim='#c2a3a1'; panel='#000000'; line='#592327'
 sections=[]
 assets={}
 def text(x,y,s,size=16,fill=cream,weight=400):
@@ -99,10 +99,31 @@ def type_text(body):
   return f'<text {match[1]} class="typed" xml:space="preserve" style="--line:{start:.3f}s">{chars}</text>'
  return re.sub(r'<text ([^>]+)>([^<]*)</text>',replace,body)
 
+def screen_frame(name, width, height):
+ left = width == 960 or name in {
+  'channel-0', 'card-pokedex-strategy-hub', 'card-analise-reverberacao-sala-sp'
+ }
+ right = width == 960 or name in {
+  'channel-4', 'card-codex-mcp-skill-transfer', 'card-strudel-based-studio'
+ }
+ # Draw to the viewport edge so adjoining README rows form one screen.
+ segments = []
+ if left:
+  segments.append(f'M0 0V{height}')
+ if right:
+  segments.append(f'M{width} 0V{height}')
+ if name == 'header':
+  segments.append(f'M0 0H{width}')
+ if name == 'footer':
+  segments.append(f'M0 {height}H{width}')
+ if not segments:
+  return ''
+ return f'<path d="{" ".join(segments)}" fill="none" stroke="#e00000" stroke-width="4"/>'
+
 def save(name,h,body,alt,w=W,link=None,section=True):
  loc='assets/'+name+'.svg'
  title=html.escape(alt)
- assets[loc]=f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>{title}</title>'+path(f'M1 1H{w-14}L{w-1} 14V{h-1}H14L1 {h-14}Z',panel)+path(f'M1 24V1H38M{w-1} {h-25}V{h-1}H{w-39}',stroke=bright)+MOTION+type_text(body)+'</svg>'
+ assets[loc]=f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>{title}</title>'+rect(0,0,w,h,panel)+path(f'M1 1H{w-14}L{w-1} 14V{h-1}H14L1 {h-14}Z',panel)+path(f'M1 24V1H38M{w-1} {h-25}V{h-1}H{w-39}',stroke=bright)+MOTION+type_text(body)+screen_frame(name,w,h)+'</svg>'
  if section: sections.append([(loc,alt,link,w)])
  return (loc,alt,link,w)
 def rail(n,title,code,h=58):
@@ -235,12 +256,11 @@ save('all-docs',58,text(24,36,'ABRIR O ARQUIVO DE REPOSITÓRIOS  ↗',16,cream,7
 save('footer',59,text(24,36,'ARASAKA NET // SESSÃO ENCERRADA',16,red,700)+text(845,36,'[ EOF ]',15,dim), 'Arasaka Net. Sessão encerrada.')
 
 def img(loc,alt,link,w):
- item=f'<img src="./{loc}" width="{100 if w==W else 48 if w==464 else 19}%" align="top" alt="{html.escape(alt,quote=True)}">'
+ item=f'<img src="./{loc}" width="{100 if w==W else 50 if w==464 else 20}%" align="top" alt="{html.escape(alt,quote=True)}">'
  return f'<a href="{html.escape(link,quote=True)}">{item}</a>' if link else item
 
 readme='<!-- Perfil temático de fã. -->\n<p align="center">\n'
-for row in sections:
- readme+=''.join(img(*a) for a in row)+'\n'
+readme+='<br>\n'.join(''.join(img(*a) for a in row) for row in sections)+'\n'
 readme+='</p>\n'
 for data in assets.values():
  ET.fromstring(data)

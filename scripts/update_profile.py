@@ -77,26 +77,48 @@ def path(d,fill='none',stroke=line):
 def rect(x,y,w,h,fill,stroke='none'):
  return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{fill}" stroke="{stroke}"/>'
 MOTION="""<style>
-@keyframes ink{from{opacity:0}to{opacity:1}}
 @keyframes cursor{0%,49%{opacity:1}50%,100%{opacity:0}}
-.typed tspan{animation:ink 1ms step-end calc(var(--line) + var(--tick)) both}
 .cursor{animation:cursor 1s step-end .85s infinite both}
-@media (prefers-reduced-motion:reduce){.typed tspan,.cursor{animation:none}}
+@media (prefers-reduced-motion:reduce){.typed{clip-path:none!important}.cursor{animation:none}}
 </style>"""
+
+def typing_line(attributes, raw, index):
+ size=float(re.search(r'font-size="([^"]+)"',attributes)[1])
+ x=float(re.search(r'\bx="([^"]+)"',attributes)[1])
+ y=float(re.search(r'\by="([^"]+)"',attributes)[1])
+ clip_id=f'typing-line-{index}'
+ delay=min(index*.07,.70)
+ duration=min(.70,max(.25,len(raw)*.025))
+ end=delay+duration
+ advance=size*.603
+ width=advance*len(raw)+size
+ times=[0]
+ widths=[0]
+ if delay:
+  times.append(delay/end)
+  widths.append(0)
+ for character in range(1,len(raw)+1):
+  times.append((delay+duration*character/max(len(raw),1))/end)
+  widths.append(advance*character+2)
+ # The base width is complete. Removing the animation restores every glyph.
+ times[-1]=1
+ widths[-1]=width
+ values=';'.join(f'{value:.4f}' for value in widths)
+ key_times=';'.join(f'{value:.6f}' for value in times)
+ clip=(f'<defs><clipPath id="{clip_id}" clipPathUnits="userSpaceOnUse">'
+       f'<rect x="{x-2}" y="{y-size*1.3}" width="{width}" height="{size*1.8}">'
+       f'<animate attributeName="width" values="{values}" keyTimes="{key_times}" '
+       f'dur="{end:.3f}s" begin="0s" calcMode="discrete" fill="remove"/>'
+       '</rect></clipPath></defs>')
+ return clip+f'<text {attributes} class="typed" clip-path="url(#{clip_id})">{html.escape(raw)}</text>'
 
 def type_text(body):
  line_index=0
  def replace(match):
   nonlocal line_index
-  raw=html.unescape(match[2])
-  start=min(line_index*.07,.70)
+  result=typing_line(match[1],html.unescape(match[2]),line_index)
   line_index+=1
-  step=min(.036,.62/max(len(raw),1))
-  chars=''.join(
-   f'<tspan style="--tick:{(step*i):.3f}s">{html.escape(char)}</tspan>'
-   for i,char in enumerate(raw)
-  )
-  return f'<text {match[1]} class="typed" xml:space="preserve" style="--line:{start:.3f}s">{chars}</text>'
+  return result
  return re.sub(r'<text ([^>]+)>([^<]*)</text>',replace,body)
 
 def render_screen():

@@ -83,6 +83,8 @@ MOTION="""<style>
 </style>"""
 
 def typing_line(attributes, raw, index):
+ if raw in {'NEURAL PATCHBAY', '[ LINK ESTABLISHED ]'}:
+  return f'<text {attributes}>{html.escape(raw)}</text>'
  size=float(re.search(r'font-size="([^"]+)"',attributes)[1])
  x=float(re.search(r'\bx="([^"]+)"',attributes)[1])
  y=float(re.search(r'\by="([^"]+)"',attributes)[1])

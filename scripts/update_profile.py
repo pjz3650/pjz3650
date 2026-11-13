@@ -298,6 +298,7 @@ analysis+=path('M24 364H936')
 analysis+=text(26,392,f'{days[0][0]:%d/%m/%Y} → {days[-1][0]:%d/%m/%Y}',14,dim)
 peak_label=text(934,392,f'PICO DIÁRIO // {maxday:%d/%m/%Y} · {maximum} CONTRIBUIÇÕES',14,red,700)
 analysis+=f'<g text-anchor="end">{peak_label}</g>'
+analysis+=text(26,414,f'TOTAL DE COMMITS PÚBLICOS NO PERÍODO // {commit_count}',14,cream,700)
 save('contribution-analysis',417,analysis,'Análise de contribuições do GitHub. Colunas 3D representam o volume de atividade por dia.',link='https://github.com/pjz3650#js-contribution-activity')
 label('04','PROJETOS','NET / ARCHIVE')
 projects=[

@@ -159,7 +159,7 @@ def render_screen():
     edges+=path(f'M9 {height-32}V{height-4}H37M923 {height-4}H951V{height-32}',stroke='#ff4747')
    if len(row)==1:
     # Keep data labels legible from the first frame, including on cached SVGs.
-    content=body if loc in {'assets/stats.svg','assets/contribution-analysis.svg'} else type_text(body)
+    content=body if loc in {'assets/stats.svg','assets/contribution-analysis.svg','assets/stack.svg'} else type_text(body)
     # The outer frame belongs to the full screen. Full-width sections sit on its background.
     interior=f'<g transform="translate(43 8) scale(.91 1)">{content}</g>'
     if Path(loc).stem in {'canais','projetos','publicacoes'}:
@@ -240,8 +240,12 @@ for item in [(505,101,117,'01 / IRIS SCAN',0),(669,83,117,'02 / NET LINK',1),(81
 header+=text(27,326,'pjz3650@sp-01:~$ open dossier',13,dim)+text(780,326,'[ LINK ESTABLISHED ]',12,red,700)
 save('header',345,header,'Arasaka Security Login. Davi Dias, @pjz3650. Acesso concedido. Cinco módulos conectados no mapa neural.')
 label('01','CANAIS','NET / LINKS')
-links=[('GITHUB','https://github.com/pjz3650'),('REPOSITÓRIOS','https://github.com/pjz3650?tab=repositories'),('CONTRIBUIÇÕES','https://github.com/pjz3650#js-contribution-activity'),('GITHUBCARD','https://githubcard.com/pjz3650'),('DEV RPG CARD','https://github-rpg-card.github-rpg-card.workers.dev/?username=pjz3650&theme=cyberpunk')]
-sections.append([save('channel-'+str(i),58,text(13,34,name,14,cream,700)+text(163,34,'↗',15,red),name,184,url,False) for i,(name,url) in enumerate(links)])
+links=[('GITHUB','https://github.com/pjz3650'),('REPOSITÓRIOS','https://github.com/pjz3650?tab=repositories'),('CONTRIBUIÇÕES','https://github.com/pjz3650#js-contribution-activity'),('GITHUBCARD','https://githubcard.com/pjz3650')]
+channel_width=W//len(links)
+sections.append([
+ save('channel-'+str(i),58,text(13,34,name,14,cream,700)+text(channel_width-21,34,'↗',15,red),name,channel_width,url,False)
+ for i,(name,url) in enumerate(links)
+])
 
 stats=rail('02','TELEMETRIA DO OPERADOR','NET / STATS')
 stats+=path('M24 59H936')
@@ -323,7 +327,7 @@ save('all-docs',58,text(24,36,'ABRIR O ARQUIVO DE REPOSITÓRIOS  ↗',16,cream,7
 save('footer',59,text(24,36,'ARASAKA NET // SESSÃO ENCERRADA',16,red,700)+text(845,36,'[ EOF ]',15,dim), 'Arasaka Net. Sessão encerrada.')
 
 def img(loc,alt,link,w):
- item=f'<img src="./{loc}" width="{100 if w==W else 50 if w==464 else 20}%" align="top" alt="{html.escape(alt,quote=True)}">'
+ item=f'<img src="./{loc}" width="{100 if w==W else 50 if w==464 else 25}%" align="top" alt="{html.escape(alt,quote=True)}">'
  return f'<a href="{html.escape(link,quote=True)}">{item}</a>' if link else item
 
 readme='<!-- Perfil temático de fã. -->\n<p align="center">\n'
